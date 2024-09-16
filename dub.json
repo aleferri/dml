@@ -1,0 +1,9 @@
+{
+	"authors": [
+		"Alessio Ferri"
+	],
+	"copyright": "Copyright © 2024, Alessio Ferri",
+	"description": "Minima D library to parse po files",
+	"license": "MIT",
+	"name": "dml"
+}

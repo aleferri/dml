@@ -1,0 +1,26 @@
+msgid ""
+msgstr ""
+
+# comment
+
+"Project-Id-Version: Example 1.0.1\n"
+"Report-Msgid-Bugs-To: support@example.com \n"
+"Last-Translator: Fantasy Name <fantasy@name.com>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#another comment
+
+msgid "Let’s make a multilingual file."
+msgstr "Lassen Sie uns eine mehrsprachige Datei erstellen"
+
+msgid "Welcome back, %1! Your last visit was on %2"
+msgstr "Willkommen zurück, %1! Dein letzter Besuch war am %2"
+
+msgid "%d page read."
+msgid_plural "%d pages read."
+msgstr[0] "Eine Seite gelesen wurde."
+msgstr[1] "%d Seiten gelesen wurden."

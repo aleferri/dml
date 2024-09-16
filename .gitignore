@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/dml
+dml.so
+dml.dylib
+dml.dll
+dml.a
+dml.lib
+dml-test-*
+*.exe
+*.o
+*.obj
+*.lst
