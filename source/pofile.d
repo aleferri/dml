@@ -5,6 +5,10 @@ import std.string;
 import std.conv;
 import std.algorithm;
 import std.array;
+import std.ascii;
+
+import expect;
+import context;
 
 private struct POHeader
 {
@@ -23,71 +27,10 @@ private struct POHeader
 
 private struct POEntry
 {
-    string msgId;
-    string msgIdPlural;
-    string msgContext;
-    string msgTemplate;
-    string[] msgTemplatePlurals;
-}
-
-public class MissingHeader : Exception
-{
-
-    this(string msg)
-    {
-        super(msg);
-    }
-
-}
-
-public class UnexpectedString : Exception
-{
-
-    this(string found, string expected)
-    {
-        super("expected '" ~ expected ~ "' but '" ~ found ~ "' found instead");
-    }
-
-}
-
-string skipCommentsOrEmpty(InputRange!string stream)
-{
-    if (stream.empty())
-    {
-        return null;
-    }
-
-    string s = stream.front();
-    while (1)
-    {
-        s = s.strip();
-        if (!s.startsWith("#") && !s.empty())
-        {
-            stream.popFront();
-            return s;
-        }
-
-        if (stream.empty())
-        {
-            break;
-        }
-        stream.popFront();
-        s = stream.front();
-    }
-
-    return null;
-}
-
-string expectMatch(string s, InputRange!string stream)
-{
-    string found = skipCommentsOrEmpty(stream);
-
-    if (s != found)
-    {
-        throw new UnexpectedString(s, found);
-    }
-
-    return found;
+    string id;
+    string pluralId;
+    string context;
+    string[] messages;
 }
 
 string extractHeaderValue(string line, string name)
@@ -143,12 +86,17 @@ void parsePluralForms(string line, string name, ref POHeader header)
 
     string[] lines = statement.split(';');
 
-    foreach (string expr; lines) {
+    foreach (string expr; lines)
+    {
         expr = expr.strip();
-        if (!expr.empty()) {
-            if (expr.startsWith("nplurals=")) {
+        if (!expr.empty())
+        {
+            if (expr.startsWith("nplurals="))
+            {
                 header.pluralsForms = expr.replace("nplurals=", "").to!long();
-            } else if (expr.startsWith("plural=")) {
+            }
+            else if (expr.startsWith("plural="))
+            {
                 header.pluralExpression = expr.replace("plural=", "");
             }
         }
@@ -174,23 +122,23 @@ private static this()
     ];
 }
 
-POHeader readHeader(InputRange!string stream)
+POHeader parseHeader(ContextWindow context, InputRange!string stream)
 {
     POHeader header = POHeader();
 
-    expectMatch("msgid \"\"", stream);
-    expectMatch("msgstr \"\"", stream);
+    expectMatch(context, "msgid \"\"", stream);
+    expectMatch(context, "msgstr \"\"", stream);
 
-    string line = skipCommentsOrEmpty(stream);
+    string line = peek(context, stream);
     while (line != null && line.startsWith("\""))
     {
         // this starts as an header
         if (!line.endsWith("\\n\""))
         {
-            throw new UnexpectedString("line end", "\\n\"");
+            throw new UnexpectedString(context, "line end", "\\n\"");
         }
 
-        string payload = line[1 .. $-3];
+        string payload = line[1 .. $ - 3];
 
         // this is an header, check which one
 
@@ -198,7 +146,7 @@ POHeader readHeader(InputRange!string stream)
 
         if (colonOffset < 0)
         {
-            throw new UnexpectedString("line end", ":");
+            throw new UnexpectedString(context, "line end", ":");
         }
 
         string headerName = payload[0 .. colonOffset];
@@ -207,16 +155,107 @@ POHeader readHeader(InputRange!string stream)
         {
             auto parser = headersParsersByName[headerName];
 
-            if (parser != null)
-            {
-                parser(payload, headerName, header);
-            }
+            parser(payload, headerName, header);
         }
 
-        line = skipCommentsOrEmpty(stream);
+        line = next(context, stream);
     }
 
     return header;
+}
+
+POEntry[] parseBody(ContextWindow context, InputRange!string stream)
+{
+    POEntry[] entries = [];
+
+    string line = peek(context, stream);
+    bool validRecord = false;
+    bool hasPlural = false;
+    POEntry entry = POEntry();
+
+    while (line != null)
+    {
+        if (!line.empty())
+        {
+            if (line.startsWith("msgid "))
+            {
+                if (validRecord)
+                {
+                    if (entry.messages.length > 0)
+                    {
+                        entries ~= entry;
+                    }
+                    else
+                    {
+                        throw new UnexpectedString(context, "msgstr", "msgid");
+                    }
+                    entry = POEntry();
+                }
+
+                entry.id = expectQuoted(context, line.replace("msgid", "").strip());
+                validRecord = true;
+                hasPlural = false;
+            }
+            else if (line.startsWith("msgid_plural "))
+            {
+                if (!validRecord)
+                {
+                    throw new UnexpectedString(context, "msgid", "msgid_plural");
+                }
+                entry.pluralId = expectQuoted(context, line.replace("msgid_plural", "").strip());
+                hasPlural = true;
+            }
+            else if (line.startsWith("msgstr "))
+            {
+                if (!validRecord)
+                {
+                    throw new UnexpectedString(context, "msgid", "msgstr");
+                }
+
+                entry.messages ~= expectQuoted(context, line.replace("msgstr", "").strip());
+            }
+            else if (line.startsWith("msgstr["))
+            {
+                string prefix = "msgstr[";
+
+                string token = line[0 .. prefix.length + 2];
+                char n = token[$ - 2];
+
+                if (!isDigit(n))
+                {
+                    throw new UnexpectedString(context, "msgstr[number]", token);
+                }
+
+                if (!validRecord)
+                {
+                    throw new UnexpectedString(context, "msgid", token);
+                }
+
+                if (!hasPlural)
+                {
+                    throw new UnexpectedString(context, "msgid", token);
+                }
+
+                uint index = (n - '0');
+
+                while (entry.messages.length < index + 1)
+                {
+                    entry.messages ~= "";
+                }
+
+                entry.messages[index] = expectQuoted(context, line.replace(token, "").strip());
+            }
+        }
+
+        line = next(context, stream);
+    }
+
+    if (validRecord)
+    {
+        entries ~= entry;
+    }
+
+    return entries;
 }
 
 unittest
@@ -224,6 +263,10 @@ unittest
     import std.stdio;
     import std.file;
 
+    auto context = new ContextWindow();
     auto stream = new File("testdata/simplepo.po").byLine().map!(a => a.to!string);
-    writeln(readHeader(inputRangeObject(stream)));
+    auto input = inputRangeObject(stream);
+    POHeader header = parseHeader(context, input);
+    writeln(header);
+    writeln(parseBody(context, input));
 }
