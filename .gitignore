@@ -9,6 +9,7 @@ dml.dll
 dml.a
 dml.lib
 dml-test-*
+vendor
 *.exe
 *.o
 *.obj
