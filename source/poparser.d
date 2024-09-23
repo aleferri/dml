@@ -246,5 +246,11 @@ unittest
     auto input = inputRangeObject(stream);
     POHeader header = parseHeader(context, input);
     writeln(header);
-    writeln(parseBody(context, input));
+
+    POEntry[] entries = parseBody(context, input);
+    writeln(entries);
+
+    POFile pofile = new POFile(header, entries);
+
+    assert("%d Seiten gelesen wurden." == pofile.lookup("one page read.", 2));
 }

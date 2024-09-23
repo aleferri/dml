@@ -20,7 +20,7 @@ msgstr "Lassen Sie uns eine mehrsprachige Datei erstellen"
 msgid "Welcome back, %1! Your last visit was on %2"
 msgstr "Willkommen zurück, %1! Dein letzter Besuch war am %2"
 
-msgid "%d page read."
+msgid "one page read."
 msgid_plural "%d pages read."
 msgstr[0] "Eine Seite gelesen wurde."
 msgstr[1] "%d Seiten gelesen wurden."
