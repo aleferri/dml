@@ -3,7 +3,10 @@
 		"Alessio Ferri"
 	],
 	"copyright": "Copyright © 2024, Alessio Ferri",
-	"description": "Minima D library to parse po files",
+	"dependencies": {
+		"expression": "~master"
+	},
+	"description": "Minimal D library to parse po files",
 	"license": "MIT",
 	"name": "dml"
 }
