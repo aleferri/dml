@@ -1,6 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"expression": "~master"
+		"expression": "~master",
+		"expression-plus": "1.0.1"
 	}
 }

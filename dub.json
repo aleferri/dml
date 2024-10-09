@@ -4,7 +4,7 @@
 	],
 	"copyright": "Copyright © 2024, Alessio Ferri",
 	"dependencies": {
-		"expression": "~master"
+		"expression-plus": "~>1.0.1"
 	},
 	"description": "Minimal D library to parse po files",
 	"license": "MIT",
