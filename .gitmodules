@@ -1,3 +1,0 @@
-[submodule "vendor/expression"]
-	path = vendor/expression
-	url = https://github.com/aleferri/expression.git
